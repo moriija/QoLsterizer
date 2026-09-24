@@ -237,6 +237,21 @@ section.empty strong{color:var(--ink);}
 }
 .district-toggle input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex:none;}
 [hidden]{display:none !important;}
+
+.threshold-row{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.65rem;}
+.threshold-row label{font-size:.75rem;color:var(--ink-soft);}
+.threshold-row input[type=number]{
+  padding:.4rem .55rem;border:1px solid var(--border-strong);border-radius:5px;
+  background:var(--bg-elevated);color:var(--ink);font-size:.85rem;width:100%;font-family:var(--font-mono);
+}
+.threshold-row input[type=number]:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.threshold-apply-btn{width:100%;margin-top:.15rem;}
+#autoNote{font-size:.75rem;color:var(--ink-soft);margin:.55rem 0 0;}
+.auto-tag{
+  font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;
+  color:var(--accent);background:var(--bg-sunken);border:1px solid var(--border-strong);
+  border-radius:4px;padding:.08rem .38rem;flex:none;white-space:nowrap;
+}
 </style>
 </head>
 <body>
@@ -274,12 +289,28 @@ section.empty strong{color:var(--ink);}
           <div class="region-list" id="regionList"></div>
         </div>
         <div class="panel">
+          <h2>Marcação automática</h2>
+          <div class="threshold-row">
+            <label for="minDistrictPct">Mínimo de distritos com dado (X%)</label>
+            <input type="number" id="minDistrictPct" min="0" max="100" step="1" value="50" />
+          </div>
+          <div class="threshold-row">
+            <label for="maxNullPct">Máximo de dados ausentes (Y%)</label>
+            <input type="number" id="maxNullPct" min="0" max="100" step="1" value="30" />
+          </div>
+          <button class="bulk-btn threshold-apply-btn" id="applyAutoBtn">Aplicar regra automática</button>
+          <p id="autoNote"></p>
+        </div>
+        <div class="panel">
           <h2>Sobre a decisão</h2>
           <p style="font-size:.8rem;color:var(--ink-soft);margin:0;">
             Clique no nome de uma variável para ver todos os valores por Distrito/Subprefeitura/Município.
             Use <strong>Manter</strong> ou <strong>Não manter</strong> para marcar a decisão.
             Variáveis ainda indefinidas na hora de exportar são tratadas como <strong>Não manter</strong>.
             Por padrão, <strong>dados_filtrados.csv</strong> só inclui linhas de Distrito — Município e Subprefeitura são descartados. Desmarque a caixa acima do botão de exportação para incluir todos os tipos.
+          </p>
+          <p style="font-size:.8rem;color:var(--ink-soft);margin:.6rem 0 0;">
+            A etiqueta <span class="auto-tag" style="vertical-align:middle;">auto</span> indica que a variável foi marcada como <strong>Não manter</strong> automaticamente, pela regra de cobertura de distritos / dados ausentes ao lado. Basta clicar em Manter, Não manter ou limpar decisão para sobrescrever — a etiqueta some assim que a decisão vira manual.
           </p>
         </div>
       </aside>
@@ -324,12 +355,67 @@ section.empty strong{color:var(--ink);}
     variables: [],
     variableMap: {},
     decisions: {},
+    autoFlags: {},
     datasetKey: null,
     sourceNames: [],
     filter: 'all',
     search: '',
-    onlyDistritos: true
+    onlyDistritos: true,
+    thresholds: { minDistrictPct: 50, maxNullPct: 30 }
   };
+
+  function loadThresholds(){
+    var t = { minDistrictPct: 50, maxNullPct: 30 };
+    try{
+      var a = localStorage.getItem('observa_min_district_pct');
+      var b = localStorage.getItem('observa_max_null_pct');
+      if (a !== null && a !== '' && !isNaN(Number(a))) t.minDistrictPct = Number(a);
+      if (b !== null && b !== '' && !isNaN(Number(b))) t.maxNullPct = Number(b);
+    }catch(e){ /* ignore — defaults stand */ }
+    return t;
+  }
+
+  function saveThresholds(t){
+    try{
+      localStorage.setItem('observa_min_district_pct', String(t.minDistrictPct));
+      localStorage.setItem('observa_max_null_pct', String(t.maxNullPct));
+    }catch(e){ /* storage unavailable — thresholds just won't persist */ }
+  }
+
+  function clampPct(n, fallback){
+    n = Number(n);
+    if (isNaN(n)) return fallback;
+    return Math.min(100, Math.max(0, n));
+  }
+
+  (function initThresholds(){
+    state.thresholds = loadThresholds();
+    var minEl = document.getElementById('minDistrictPct');
+    var maxEl = document.getElementById('maxNullPct');
+    minEl.value = state.thresholds.minDistrictPct;
+    maxEl.value = state.thresholds.maxNullPct;
+
+    function onThresholdChange(){
+      state.thresholds = {
+        minDistrictPct: clampPct(minEl.value, state.thresholds.minDistrictPct),
+        maxNullPct: clampPct(maxEl.value, state.thresholds.maxNullPct)
+      };
+      minEl.value = state.thresholds.minDistrictPct;
+      maxEl.value = state.thresholds.maxNullPct;
+      saveThresholds(state.thresholds);
+      if (state.rows && state.rows.length) applyAutoMarking(false);
+    }
+    minEl.addEventListener('change', onThresholdChange);
+    maxEl.addEventListener('change', onThresholdChange);
+
+    document.getElementById('applyAutoBtn').addEventListener('click', function(){
+      if (!state.rows || !state.rows.length){
+        document.getElementById('autoNote').textContent = 'Carregue um conjunto de dados primeiro.';
+        return;
+      }
+      applyAutoMarking(false);
+    });
+  })();
 
   (function initOnlyDistritosToggle(){
     try{
@@ -424,6 +510,11 @@ section.empty strong{color:var(--ink);}
     return text;
   }
 
+  // Loads a CSV in either format:
+  //   long : Nome;Região;Período;Resultado
+  //   wide : Período;tipo_regiao;Distrito;<indicador 1>;<indicador 2>;...
+  // Wide files are pivoted into the same {nome, regiao, periodo, resultado}
+  // records; empty cells (no data) are skipped.
   function rowsFromCSVText(text){
     text = stripBOM(text);
     var firstLineEnd = text.indexOf('\n');
@@ -432,10 +523,10 @@ section.empty strong{color:var(--ink);}
     var table = parseCSV(text, delim);
     if (!table.length) return [];
     var header = table[0];
-    var colmap = detectColumns(header);
-    if (!colmap){
-      throw new Error('Não encontrei as colunas Nome/Região/Período/Resultado no cabeçalho: ' + header.join(delim));
-    }
+    // A long-format header has 4 columns; anything much wider is a wide file.
+    var colmap = header.length > 6 ? null : detectColumns(header);
+    if (!colmap) return rowsFromWideTable(table);
+
     var out = [];
     for (var i=1;i<table.length;i++){
       var r = table[i];
@@ -451,6 +542,62 @@ section.empty strong{color:var(--ink);}
     return out;
   }
 
+  function rowsFromWideTable(table){
+    var header = table[0];
+    var normed = header.map(norm);
+    var head = Math.min(5, normed.length);
+    var per = -1, tipo = -1, nome = -1, i;
+
+    for (i=0;i<head;i++){
+      if (normed[i]==='período' || normed[i]==='periodo' || normed[i]==='ano'){ per = i; break; }
+    }
+    if (per === -1){
+      for (i=0;i<head;i++){ if (normed[i].indexOf('per') === 0){ per = i; break; } }
+    }
+    if (per === -1){
+      throw new Error('Não encontrei a coluna de período (Período/Ano) no cabeçalho.');
+    }
+    for (i=0;i<head;i++){
+      if (i !== per && normed[i].indexOf('tipo') !== -1){ tipo = i; break; }
+    }
+    var nameHints = ['distrito','subprefeitura','munic','regi','nome'];
+    for (i=0;i<head && nome === -1;i++){
+      if (i === per || i === tipo) continue;
+      if (nameHints.some(function(h){ return normed[i].indexOf(h) !== -1; })) nome = i;
+    }
+    if (nome === -1){
+      for (i=0;i<head;i++){ if (i !== per && i !== tipo){ nome = i; break; } }
+    }
+    if (nome === -1){
+      throw new Error('Não encontrei a coluna com o nome da região no cabeçalho.');
+    }
+
+    var indicators = [];
+    for (i=0;i<header.length;i++){
+      if (i === per || i === tipo || i === nome) continue;
+      var nm = (header[i]||'').trim();
+      if (nm) indicators.push({ idx:i, nome:nm });
+    }
+
+    var out = [];
+    for (var ri=1; ri<table.length; ri++){
+      var r = table[ri];
+      if (!r || r.length===0 || (r.length===1 && r[0]==='')) continue;
+      var m = (r[per]||'').match(/-?\d+/);
+      var nomeRegiao = (r[nome]||'').trim();
+      if (!m || !nomeRegiao) continue;
+      var periodo = parseInt(m[0],10);
+      var tipoRegiao = tipo === -1 ? '' : (r[tipo]||'').trim();
+      var regiao = tipoRegiao ? nomeRegiao + ' (' + tipoRegiao + ')' : nomeRegiao;
+      for (var k=0;k<indicators.length;k++){
+        var val = (r[indicators[k].idx]||'').trim();
+        if (!hasValue(val)) continue;
+        out.push({ nome:indicators[k].nome, regiao:regiao, periodo:periodo, resultado:val });
+      }
+    }
+    return out;
+  }
+  
   function rowsFromJSON(obj){
     var out = [];
     if (obj && obj.variables){
@@ -588,6 +735,7 @@ section.empty strong{color:var(--ink);}
     renderStats(ds);
     renderRegionCounts(ds);
     renderVarList(ds); // renderVarList already calls applyFilters() + updateProgress()
+    applyAutoMarking(true);
   }
 
   function loadDecisions(key){
@@ -602,6 +750,23 @@ section.empty strong{color:var(--ink);}
     try{
       localStorage.setItem('observa_decisions::'+key, JSON.stringify(decisions));
     }catch(e){ /* storage unavailable — decisions just won't persist across reloads */ }
+  }
+
+  // autoFlags[nome] === true means the current decision for that variable was
+  // set by the auto-marking rule, not chosen by hand — so it's safe to
+  // recompute/revert it later without clobbering a real user choice.
+  function loadAutoFlags(key){
+    try{
+      var raw = localStorage.getItem('observa_autoflags::'+key);
+      if (!raw) return {};
+      return JSON.parse(raw);
+    }catch(e){ return {}; }
+  }
+
+  function saveAutoFlags(key, flags){
+    try{
+      localStorage.setItem('observa_autoflags::'+key, JSON.stringify(flags));
+    }catch(e){ /* storage unavailable — auto flags just won't persist across reloads */ }
   }
 
   function csvEscape(val){
@@ -634,7 +799,8 @@ section.empty strong{color:var(--ink);}
       ['Moda do período', modaStr],
       ['Média do período', fmtNum(s.media,2)],
       ['Mediana do período', fmtNum(s.mediana,1)],
-      ['Intervalo total', s.min+'–'+s.max]
+      ['Intervalo total', s.min+'–'+s.max],
+      ['Auto-descartadas', fmtNum(Object.keys(state.autoFlags||{}).length)]
     ];
     var html = cards.map(function(c){
       return '<div class="stat-card"><div class="label">'+c[0]+'</div><div class="value">'+c[1]+'</div></div>';
@@ -680,6 +846,130 @@ section.empty strong{color:var(--ink);}
 
   function decisionOf(nome){
     return state.decisions[nome] || 'undecided';
+  }
+
+  // For every variable that appears anywhere in the raw dataset (regardless
+  // of the "só Distritos" toggle), works out whether it should be
+  // auto-discarded, based on Distrito-only data:
+  //   - coverage: dá com dado em quantos % dos distritos existentes no
+  //     dataset. Abaixo de thresholds.minDistrictPct  -> descartar.
+  //   - missing:  dos registros de Distrito dessa variável, quantos % têm
+  //     valor vazio/placeholder (via hasValue). Acima de thresholds.maxNullPct
+  //     -> descartar.
+  // Returns { nome: true/false, ... }. If the dataset has zero Distrito rows
+  // at all, no variable is auto-flagged (there's nothing to judge coverage
+  // against).
+  function computeAutoDiscardFlags(){
+    var minPct = state.thresholds.minDistrictPct;
+    var maxNullPct = state.thresholds.maxNullPct;
+
+    var allDistricts = {};
+    var totalDistricts = 0;
+    var perVar = {};
+    var allVarNames = {};
+
+    state.rows.forEach(function(r){
+      allVarNames[r.nome] = true;
+      if (!isDistrito(r.regiao)) return;
+      if (!allDistricts[r.regiao]){ allDistricts[r.regiao] = true; totalDistricts++; }
+      if (!perVar[r.nome]) perVar[r.nome] = { covered: {}, coveredCount: 0, total: 0, nullCount: 0 };
+      var entry = perVar[r.nome];
+      entry.total++;
+      if (hasValue(r.resultado)){
+        if (!entry.covered[r.regiao]){ entry.covered[r.regiao] = true; entry.coveredCount++; }
+      } else {
+        entry.nullCount++;
+      }
+    });
+
+    var flags = {};
+    Object.keys(allVarNames).forEach(function(nome){
+      if (totalDistricts === 0){ flags[nome] = false; return; }
+      var entry = perVar[nome] || { coveredCount: 0, total: 0, nullCount: 0 };
+      var coveragePct = (entry.coveredCount / totalDistricts) * 100;
+      var belowCoverage = coveragePct < minPct;
+      var nullPct = entry.total > 0 ? (entry.nullCount / entry.total) * 100 : 0;
+      var aboveNull = entry.total > 0 && nullPct > maxNullPct;
+      flags[nome] = belowCoverage || aboveNull;
+    });
+    return flags;
+  }
+
+  function removeAutoTag(row){
+    var tag = row.querySelector('.auto-tag');
+    if (tag) tag.remove();
+  }
+
+  // Applies computeAutoDiscardFlags() to state.decisions:
+  //   - undecided + rule says discard          -> set 'not', flag as auto
+  //   - was auto-flagged + rule still says yes -> stays 'not' (auto)
+  //   - was auto-flagged + rule no longer says yes -> reverts to undecided
+  //   - manually decided (keep or not, not auto) -> never touched
+  // silent=true skips updating the on-screen note (used on routine
+  // re-renders like toggling "só Distritos"); pass false for an explicit
+  // user-triggered run so they see what changed.
+  function applyAutoMarking(silent){
+    if (!state.rows || !state.rows.length) return;
+    var flags = computeAutoDiscardFlags();
+    var changed = 0, reverted = 0;
+
+    Object.keys(flags).forEach(function(nome){
+      var shouldDiscard = flags[nome];
+      var wasAuto = !!state.autoFlags[nome];
+      var current = state.decisions[nome];
+
+      if (wasAuto){
+        if (!shouldDiscard){
+          delete state.decisions[nome];
+          delete state.autoFlags[nome];
+          reverted++;
+        }
+        // else: still meets the rule, stays as-is
+      } else if (!current && shouldDiscard){
+        state.decisions[nome] = 'not';
+        state.autoFlags[nome] = true;
+        changed++;
+      }
+      // manual 'keep' / 'not' decisions are left alone either way
+    });
+
+    if (changed || reverted){
+      saveDecisions(state.datasetKey, state.decisions);
+      saveAutoFlags(state.datasetKey, state.autoFlags);
+    }
+
+    document.querySelectorAll('.var-row').forEach(function(row){
+      var nome = row.dataset.nome;
+      var d = decisionOf(nome);
+      row.dataset.status = d;
+      var actions = row.querySelector('.var-actions');
+      if (actions){
+        actions.querySelector('.btn-keep').classList.toggle('active', d==='keep');
+        actions.querySelector('.btn-not').classList.toggle('active', d==='not');
+      }
+      var header = row.querySelector('.var-header');
+      var existingTag = header.querySelector('.auto-tag');
+      if (state.autoFlags[nome] && !existingTag){
+        var span = document.createElement('span');
+        span.className = 'auto-tag';
+        span.textContent = 'auto';
+        span.title = 'Marcado automaticamente: cobertura de distritos abaixo de ' + state.thresholds.minDistrictPct +
+          '% ou dados ausentes acima de ' + state.thresholds.maxNullPct + '%.';
+        header.insertBefore(span, header.querySelector('.var-range'));
+      } else if (!state.autoFlags[nome] && existingTag){
+        existingTag.remove();
+      }
+    });
+
+    updateProgress();
+
+    var note = document.getElementById('autoNote');
+    if (note && !silent){
+      note.textContent = (changed || reverted)
+        ? (changed + ' variável(is) marcada(s) automaticamente como "não manter"' +
+           (reverted ? '; ' + reverted + ' revertida(s) para indefinida.' : '.'))
+        : 'Nenhuma alteração necessária com os limites atuais.';
+    }
   }
 
   function renderVarBody(v){
@@ -786,22 +1076,31 @@ section.empty strong{color:var(--ink);}
       actions.querySelector('.btn-keep').addEventListener('click', function(e){
         e.stopPropagation();
         state.decisions[v.nome] = 'keep';
+        delete state.autoFlags[v.nome];
         saveDecisions(state.datasetKey, state.decisions);
+        saveAutoFlags(state.datasetKey, state.autoFlags);
         refreshButtons();
+        removeAutoTag(row);
         updateProgress();
       });
       actions.querySelector('.btn-not').addEventListener('click', function(e){
         e.stopPropagation();
         state.decisions[v.nome] = 'not';
+        delete state.autoFlags[v.nome];
         saveDecisions(state.datasetKey, state.decisions);
+        saveAutoFlags(state.datasetKey, state.autoFlags);
         refreshButtons();
+        removeAutoTag(row);
         updateProgress();
       });
       actions.querySelector('.clear-btn').addEventListener('click', function(e){
         e.stopPropagation();
         delete state.decisions[v.nome];
+        delete state.autoFlags[v.nome];
         saveDecisions(state.datasetKey, state.decisions);
+        saveAutoFlags(state.datasetKey, state.autoFlags);
         refreshButtons();
+        removeAutoTag(row);
         updateProgress();
       });
 
@@ -927,6 +1226,7 @@ section.empty strong{color:var(--ink);}
       state.sourceNames = names;
       state.datasetKey = names.slice().sort().join('|') + '::' + rawDs.totalRows;
       state.decisions = loadDecisions(state.datasetKey);
+      state.autoFlags = loadAutoFlags(state.datasetKey);
       state.filter = 'all';
       state.search = '';
       document.getElementById('searchBox').value = '';
