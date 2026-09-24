@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Parser de CSVs do ObservaSampa -> JSON para observa_review.html
+
+Aceita DOIS formatos de CSV (detectados automaticamente pelo cabeçalho):
+
+  1) LONGO (formato original):
+       Nome;Região;Período;Resultado
+
+  2) LARGO (formato "dados_filtrados"):
+       Período;tipo_regiao;Distrito;<indicador 1>;<indicador 2>;...
+     Cada coluna de indicador vira uma variável; células vazias (sem dado)
+     são descartadas, igual a uma linha que não existiria no formato longo.
+     A região fica no formato "Nome (tipo_regiao)", ex.: "Aricanduva (Distrito)".
+"""
+
 import argparse
 import csv
 import json
@@ -10,12 +25,21 @@ import statistics
 import sys
 from collections import defaultdict, Counter
 
+# ---------------------------------------------------------------- formato longo
 COLUMN_HINTS = {
     "nome": ["nome", "variavel", "variável", "indicador"],
     "regiao": ["regi"],
     "periodo": ["per"],
     "resultado": ["result", "valor"],
 }
+
+# Cabeçalhos com mais colunas do que isso são tratados como formato largo.
+MAX_LONG_COLUMNS = 6
+
+# ---------------------------------------------------------------- formato largo
+PERIOD_NAMES = {"período", "periodo", "ano"}
+REGION_NAME_HINTS = ["distrito", "subprefeitura", "munic", "regi", "nome"]
+MISSING_VALUES = {"", "na", "n/a", "nan", "n/d", "-", "..."}
 
 
 def normalize(s):
@@ -40,10 +64,113 @@ def detect_columns(header):
     return mapping
 
 
+def detect_wide_columns(header):
+    """Acha as colunas Período / tipo_regiao / nome da região; o resto são indicadores."""
+    norm = [normalize(h) for h in header]
+    head = range(min(5, len(norm)))  # colunas de identificação ficam no começo
+
+    per_idx = next((i for i in head if norm[i] in PERIOD_NAMES), None)
+    if per_idx is None:
+        per_idx = next((i for i in head if norm[i].startswith("per")), None)
+    if per_idx is None:
+        raise ValueError(
+            f"Não encontrei a coluna de período (Período/Ano) no cabeçalho: {header[:5]}"
+        )
+
+    tipo_idx = next((i for i in head if "tipo" in norm[i] and i != per_idx), None)
+
+    nome_idx = next(
+        (i for i in head
+         if i not in (per_idx, tipo_idx) and any(h in norm[i] for h in REGION_NAME_HINTS)),
+        None,
+    )
+    if nome_idx is None:
+        nome_idx = next((i for i in head if i not in (per_idx, tipo_idx)), None)
+    if nome_idx is None:
+        raise ValueError(f"Não encontrei a coluna com o nome da região: {header[:5]}")
+
+    ident = {per_idx, tipo_idx, nome_idx}
+    indicators = [(i, header[i].strip()) for i in range(len(header))
+                  if i not in ident and header[i].strip()]
+    return per_idx, tipo_idx, nome_idx, indicators
+
+
 def sniff_delimiter(sample_line):
     if sample_line.count(";") >= sample_line.count(","):
         return ";"
     return ","
+
+
+def parse_period(periodo_raw):
+    m = re.search(r"-?\d+", periodo_raw)
+    return int(m.group()) if m else None
+
+
+def load_rows_long(reader, header, path):
+    colmap = detect_columns(header)
+    rows = []
+    skipped = 0
+    for raw in reader:
+        if not raw or all(not c.strip() for c in raw):
+            continue
+        try:
+            nome = raw[colmap["nome"]].strip()
+            regiao = raw[colmap["regiao"]].strip()
+            periodo_raw = raw[colmap["periodo"]].strip()
+            resultado = raw[colmap["resultado"]].strip()
+        except IndexError:
+            skipped += 1
+            continue
+
+        periodo = parse_period(periodo_raw)
+        if periodo is None:
+            skipped += 1
+            continue
+
+        rows.append((nome, regiao, periodo, resultado))
+    if skipped:
+        print(f"  (aviso: {skipped} linha(s) de {os.path.basename(path)} ignorada(s) — período inválido)")
+    return rows
+
+
+def load_rows_wide(reader, header, path):
+    per_idx, tipo_idx, nome_idx, indicators = detect_wide_columns(header)
+    print(f"  Formato largo detectado: {len(indicators)} indicadores em colunas.")
+
+    names = [n for _, n in indicators]
+    dupes = [n for n, c in Counter(names).items() if c > 1]
+    if dupes:
+        print(f"  (aviso: {len(dupes)} indicador(es) com nome repetido serão mesclados: {dupes[:3]})")
+
+    rows = []
+    skipped = 0
+    empty_cells = 0
+    n_lines = 0
+    for raw in reader:
+        if not raw or all(not c.strip() for c in raw):
+            continue
+        n_lines += 1
+
+        periodo = parse_period(raw[per_idx]) if per_idx < len(raw) else None
+        nome_regiao = raw[nome_idx].strip() if nome_idx < len(raw) else ""
+        if periodo is None or not nome_regiao:
+            skipped += 1
+            continue
+
+        tipo = raw[tipo_idx].strip() if tipo_idx is not None and tipo_idx < len(raw) else ""
+        regiao = f"{nome_regiao} ({tipo})" if tipo else nome_regiao
+
+        for idx, nome in indicators:
+            valor = raw[idx].strip() if idx < len(raw) else ""
+            if normalize(valor) in MISSING_VALUES:
+                empty_cells += 1
+                continue
+            rows.append((nome, regiao, periodo, valor))
+
+    print(f"  {n_lines} linha(s) região×período; {empty_cells} célula(s) sem dado descartada(s).")
+    if skipped:
+        print(f"  (aviso: {skipped} linha(s) de {os.path.basename(path)} ignorada(s) — período/região inválido)")
+    return rows
 
 
 def load_rows(path):
@@ -53,32 +180,18 @@ def load_rows(path):
         fh.seek(0)
         reader = csv.reader(fh, delimiter=delimiter)
         header = next(reader)
-        colmap = detect_columns(header)
 
-        rows = []
-        skipped = 0
-        for raw in reader:
-            if not raw or all(not c.strip() for c in raw):
-                continue
-            try:
-                nome = raw[colmap["nome"]].strip()
-                regiao = raw[colmap["regiao"]].strip()
-                periodo_raw = raw[colmap["periodo"]].strip()
-                resultado = raw[colmap["resultado"]].strip()
-            except IndexError:
-                skipped += 1
-                continue
-
-            m = re.search(r"-?\d+", periodo_raw)
-            if not m:
-                skipped += 1
-                continue
-            periodo = int(m.group())
-
-            rows.append((nome, regiao, periodo, resultado))
-        if skipped:
-            print(f"  (aviso: {skipped} linha(s) de {os.path.basename(path)} ignorada(s) — período inválido)")
-        return rows
+        if len(header) > MAX_LONG_COLUMNS:
+            return load_rows_wide(reader, header, path)
+        try:
+            return load_rows_long(reader, header, path)
+        except ValueError:
+            # Cabeçalho curto que não é Nome;Região;Período;Resultado:
+            # tenta como formato largo antes de desistir.
+            fh.seek(0)
+            reader = csv.reader(fh, delimiter=delimiter)
+            header = next(reader)
+            return load_rows_wide(reader, header, path)
 
 
 def region_type(regiao):
@@ -192,8 +305,13 @@ def build_json(rows, sources):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Parser de CSVs no formato ObservaSampa -> JSON para observa_review.html")
-    parser.add_argument("input_csvs", nargs="+", help="Um ou mais arquivos CSV (Nome;Região;Período;Resultado)")
+    parser = argparse.ArgumentParser(
+        description="Parser de CSVs no formato ObservaSampa (longo ou largo) -> JSON para observa_review.html"
+    )
+    parser.add_argument(
+        "input_csvs", nargs="+",
+        help="Um ou mais CSVs: Nome;Região;Período;Resultado  OU  Período;tipo_regiao;Distrito;<indicadores...>",
+    )
     parser.add_argument("-o", "--output", default="dataset.json", help="Arquivo JSON de saída (padrão: dataset.json)")
     args = parser.parse_args()
 
@@ -205,9 +323,13 @@ def main():
             sys.exit(1)
         print(f"Lendo {path} ...")
         rows = load_rows(path)
-        print(f"  {len(rows)} linha(s) carregada(s).")
+        print(f"  {len(rows)} registro(s) carregado(s).")
         all_rows.extend(rows)
         sources.append(os.path.basename(path))
+
+    if not all_rows:
+        print("Nenhum registro válido encontrado. Verifique o formato do CSV.")
+        sys.exit(1)
 
     print()
     print_report(all_rows)
