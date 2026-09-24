@@ -10,7 +10,7 @@ csv/
   generated/    dados já processados (formato longo) e planilha de decisões
 variable-reviewer/
   observa_parser.py    converte os CSVs em um JSON para revisão
-  observa_review.html  interface para revisar as variáveis e decidir quais manter
+  index.html  interface para revisar as variáveis e decidir quais manter
 ```
 
 ## Formatos de CSV aceitos
@@ -30,7 +30,7 @@ python3 variable-reviewer/observa_parser.py csv/extracted/dados_filtrados_2013_2
 
 O script imprime um relatório com total de linhas, variáveis, regiões e estatísticas do período coberto.
 
-2. Abra `observa_review.html` no navegador e carregue o `dataset.json` (ou os CSVs diretamente).
+2. Abra `index.html` no navegador e carregue o `dataset.json` (ou os CSVs diretamente).
 
 3. Na interface, revise cada variável e marque "Manter" ou "Não manter". Também é possível aplicar uma regra automática de descarte por cobertura de distritos e percentual de dados nulos.
 
