@@ -1,0 +1,58 @@
+﻿Nome;IntervaloDeAnos;Decisao
+01.01.01 Quantidade de famílias em situação de extrema pobreza (até 1/4 salário mínimo);2023;keep
+01.02.01 Quantidade de famílias em situação de pobreza (renda por pessoa de ⅛ até ¼ de salário-mínimo);2023;keep
+01.02.02 Quantidade de famílias em situação de baixa renda (renda por pessoa de ¼ até ½ salário mínimo);2023;keep
+01.03.01 Quantidade de famílias que recebem recursos dos programas de transferência de renda;2023;not keep
+01.03.02 Quantidade de famílias beneficiárias do Programa Bolsa Família;2023;keep
+01.05.02 Número de famílias em atendimento habitacional provisório (Auxílio Aluguel) por situação de risco e emergência;2023;keep
+01.05.03 Famílias em atendimento habitacional provisório por situação de risco e emergência (%);2023;not keep
+02.02.05 Proporção de nascidos vivos com peso ao nascer inferior a 2.500 gramas (%);2023;keep
+03.01.01 Razão de mortalidade materna (por 100 mil nascidos vivos);2023;keep
+03.02.01 Taxa de mortalidade infantil (por mil nascidos vivos);2023;keep
+03.07.02 Proporção de gestantes adolescentes (%);2023;keep
+04.01.02 Alunos por turma do ensino fundamental da rede municipal;2023;not keep
+04.01.03 Taxa de distorção da idade-ano para o ano no Ensino Fundamental nos anos iniciais (%);2023;not keep
+04.01.04 Taxa de distorção da idade-ano para o ano no Ensino Fundamental nos anos finais (%);2023;not keep
+04.02.01 Demanda Atendida de Vagas em Creches da Rede Municipal de Ensino (%);2023;keep
+04.02.03 Alunos por turma da creche da rede pública municipal;2023;not keep
+04.02.04 Alunos por turma da pré-escola da rede pública municipal;2023;not keep
+04.0a.01 Porcentagem de escolas com recursos para Atendimento Educacional Especializado (%);2023;keep
+11.01.03 Número de Unidades Habitacionais entregues (por meio de programas habitacionais e parcerias firmadas);2023;keep
+11.01.07 Número estimado de domicílios em favelas;2023;keep
+11.01.08 Total de famílias beneficiárias de Auxílio Aluguel por ano;2023;keep
+11.05.02 Número de ocorrências atendidas – deslizamento;2023;keep
+11.05.03 Número de ocorrências atendidas – inundação;2023;keep
+16.02.03 Número de casos notificados de violência contra crianças e adolescentes;2023;keep
+Alunos da rede municipal de ensino da raça/cor amarela (%);2023;not keep
+Alunos da rede municipal de ensino da raça/cor branca (%);2023;not keep
+Alunos da rede municipal de ensino da raça/cor indígena (%);2023;not keep
+Alunos da rede municipal de ensino da raça/cor parda (%);2023;not keep
+Alunos da rede municipal de ensino da raça/cor preta (%);2023;not keep
+Alunos da rede municipal de ensino do sexo feminino (%);2023;not keep
+Alunos da rede municipal de ensino do sexo masculino (%);2023;not keep
+Compatibilidade Bairro-Escola Educação Infantil municipal;2023;not keep
+Demanda atendida de vagas em Pré-escolas da Rede Municipal de Ensino (%);2023;keep
+Equipamentos públicos municipais de cultura (por 100 mil habitantes);2023;keep
+Escolas Municipais de Ensino Fundamental que oferecem turmas em educação integral em tempo integral (7h/dia ou mais);2023;keep
+Número de acidentes de bicicleta;2023;keep
+Número de casos de notificação de violência contra pessoas idosas;2023;keep
+Número de matrículas em tempo integral nas escolas públicas municipais de Educação Infantil;2023;keep
+Número de ocorrências atendidas – alagamento;2023;keep
+Número de ocorrências atendidas – queda de árvore;2023;keep
+População com 15 anos ou mais;2023;not keep
+População com 60 anos ou mais;2023;keep
+População total;2023;keep
+População total - homens;2023;not keep
+População total - mulheres;2023;keep
+Porcentagem de lâmpadas LED na iluminação pública (%);2023;keep
+Professores da Rede Municipal com Ensino Superior completo (%);2023;keep
+Proporção de nascidos vivos de parturientes que realizaram sete ou mais consultas de pré-natal (%);2023;not keep
+Quantidade de lâmpadas na iluminação pública;2023;keep
+Razão de sexos;2023;not keep
+Taxa de abandono escolar no Ensino Fundamental da Rede Municipal de Ensino (%);2023;keep
+Taxa de abandono escolar no Ensino Médio da Rede Municipal de Ensino (%);2023;keep
+Taxa de distorção idade-série no Ensino Fundamental da Rede Municipal de Ensino (%);2023;not keep
+Taxa de distorção idade-série no Ensino Médio da Rede Municipal de Ensino (%);2023;not keep
+Taxa de repetência dos alunos no Ensino Fundamental da Rede Municipal de Ensino (%);2023;not keep
+Taxa de repetência dos alunos no Ensino Médio da Rede Municipal de Ensino (%);2023;not keep
+Índice de envelhecimento;2023;keep
