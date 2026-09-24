@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ObservaSampa · Revisão de variáveis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>ObservaSampa · Revisão de variáveis</h1>
+      <div class="sub">Carregue um CSV (Nome;Região;Período;Resultado) ou um JSON gerado pelo observa_parser.py. Funciona inteiramente no seu navegador — nada é enviado a nenhum servidor.</div>
+    </div>
+    <div class="loader">
+      <label class="file-btn">
+        <span>Carregar arquivo(s)</span>
+        <input type="file" id="fileInput" accept=".csv,.json" multiple />
+      </label>
+      <button class="bulk-btn" id="resetBtn" hidden>Carregar outro conjunto</button>
+    </div>
+  </header>
+
+  <div id="loadStatus"></div>
+
+  <section class="empty" id="emptyState">
+    <strong>Nenhum dado carregado ainda.</strong>
+    <p>Selecione um ou mais arquivos .csv (no formato Nome;Região;Período;Resultado) ou um .json exportado pelo observa_parser.py. Pode carregar vários arquivos de uma vez — os dados são combinados.</p>
+  </section>
+
+  <div id="app" hidden>
+
+    <div class="stats-strip" id="statsStrip"></div>
+
+    <div class="layout">
+      <aside>
+        <div class="panel">
+          <h2>Registros por região</h2>
+          <div class="region-list" id="regionList"></div>
+        </div>
+        <div class="panel">
+          <h2>Marcação automática</h2>
+          <div class="threshold-row">
+            <label for="minDistrictPct">Mínimo de distritos com dado (X%)</label>
+            <input type="number" id="minDistrictPct" min="0" max="100" step="1" value="50" />
+          </div>
+          <div class="threshold-row">
+            <label for="maxNullPct">Máximo de dados ausentes (Y%)</label>
+            <input type="number" id="maxNullPct" min="0" max="100" step="1" value="30" />
+          </div>
+          <button class="bulk-btn threshold-apply-btn" id="applyAutoBtn">Aplicar regra automática</button>
+          <p id="autoNote"></p>
+        </div>
+        <div class="panel">
+          <h2>Sobre a decisão</h2>
+          <p style="font-size:.8rem;color:var(--ink-soft);margin:0;">
+            Clique no nome de uma variável para ver todos os valores por Distrito/Subprefeitura/Município.
+            Use <strong>Manter</strong> ou <strong>Não manter</strong> para marcar a decisão.
+            Variáveis ainda indefinidas na hora de exportar são tratadas como <strong>Não manter</strong>.
+            Por padrão, <strong>dados_filtrados.csv</strong> só inclui linhas de Distrito — Município e Subprefeitura são descartados. Desmarque a caixa acima do botão de exportação para incluir todos os tipos.
+          </p>
+          <p style="font-size:.8rem;color:var(--ink-soft);margin:.6rem 0 0;">
+            A etiqueta <span class="auto-tag" style="vertical-align:middle;">auto</span> indica que a variável foi marcada como <strong>Não manter</strong> automaticamente, pela regra de cobertura de distritos / dados ausentes ao lado. Basta clicar em Manter, Não manter ou limpar decisão para sobrescrever — a etiqueta some assim que a decisão vira manual.
+          </p>
+        </div>
+      </aside>
+
+      <main>
+        <div class="toolbar">
+          <input type="search" id="searchBox" placeholder="Buscar variável pelo nome…" />
+          <div class="seg" id="statusFilter">
+            <button data-filter="all" class="active">Todas</button>
+            <button data-filter="keep">Manter</button>
+            <button data-filter="not">Não manter</button>
+            <button data-filter="undecided">Indefinidas</button>
+          </div>
+          <span class="progress-tag" id="progressTag"></span>
+          <button class="bulk-btn" id="expandAllBtn">Expandir visíveis</button>
+          <button class="bulk-btn" id="collapseAllBtn">Recolher todas</button>
+        </div>
+
+        <div class="var-list" id="varList"></div>
+      </main>
+    </div>
+
+    <div class="bottom-bar">
+      <span class="note" id="exportNote"></span>
+      <label class="district-toggle" title="Quando marcado, dados_filtrados.csv sai apenas com linhas de Distrito — Município e Subprefeitura são sempre descartados dessa exportação.">
+        <input type="checkbox" id="onlyDistritosToggle" checked />
+        Exportar dados só de Distritos (descartar Município/Subprefeitura)
+      </label>
+      <button class="export-btn secondary" id="exportReviewBtn">Baixar variaveis_revisao.csv</button>
+      <button class="export-btn" id="exportDataBtn">Baixar dados_filtrados.csv</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
