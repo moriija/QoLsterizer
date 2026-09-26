@@ -150,25 +150,25 @@ def norm_demografica(df):
     regras_ajustadas = {
         # === VARIÁVEIS ORIGINAIS DA SUA LISTA ===
         '01.01.01 Quantidade de famílias em situação de extrema pobreza (até 1/4 salário mínimo)': (
-            'População total', 100, 'Famílias em Extrema Pobreza (%)'
+            'População total', 100000, 'Famílias em Extrema Pobreza (por 100 mil hab.)'
         ),
         '01.02.01 Quantidade de famílias em situação de pobreza (renda por pessoa de ⅛ até ¼ de salário-mínimo) ': (
-            'População total', 100, 'Famílias em situação de pobreza (%)'
+            'População total', 100000, 'Famílias em situação de pobreza (por 100 mil hab.)'
         ),
         '01.02.02 Quantidade de famílias em situação de baixa renda (renda por pessoa de ¼ até ½ salário mínimo)': (
-            'População total', 100, 'Famílias de baixa renda (%)'
+            'População total', 100000, 'Famílias de baixa renda (por 100 mil hab.)'
         ),
         '01.03.02 Quantidade de famílias beneficiárias do Programa Bolsa Família': (
-            'População total', 100, 'Famílias Beneficiárias Bolsa Família (%)'
+            'População total', 100000, 'Famílias Beneficiárias Bolsa Família (por 100 mil hab.)'
         ),
         '01.05.02 Número de famílias em atendimento habitacional provisório (Auxílio Aluguel) por situação de risco e emergência ': (
-            'População total', 100, 'Famílias em Auxílio Aluguel Risco (%)'
+            'População total', 100000, 'Famílias em Auxílio Aluguel Risco (por 100 mil hab.)'
         ),
         '11.01.07 Número estimado de domicílios em favelas': (
-            'População total', 100, 'Domicílios em Favelas (%)'
+            'População total', 100000, 'Domicílios em Favelas (por 100 mil hab.)'
         ),
         '11.01.08 Total de famílias beneficiárias de Auxílio Aluguel por ano': (
-            'População total', 100, 'Familias beneficiárias de Auxílio Aluguel (%)'
+            'População total', 100000, 'Familias beneficiárias de Auxílio Aluguel (por 100 mil hab.)'
         ),
         '11.05.02 Número de ocorrências atendidas – deslizamento': (
             'População total', 100000, 'Ocorrências de Deslizamento (por 100 mil hab.)'
