@@ -200,7 +200,7 @@ def norm_demografica(df):
         'V0340-População total - masculina': ('População total', 100, 'População Masculina (%)'),
         
         # Assistência Social
-        'V0206-Famílias que recebem recursos dos programas de transferência de renda': ('População total', 100, 'Famílias com Transferência de Renda (%)'),
+        'V0206-Famílias que recebem recursos dos programas de transferência de renda': ('População total', 100000, 'Famílias com Transferência de Renda (por 100 mil hab.)'),
 
         # === DEPENDÊNCIAS DE DENOMINADORES === 
         # (As variáveis que usam os denominadores abaixo precisam ser processadas ANTES que o denominador seja deletado)
@@ -240,7 +240,8 @@ def norm_demografica(df):
             )
     return df_normalizado
 
-norm_demografica(df_sem_nulls).to_csv("normalizado/sel3_full.csv", sep=';')
+df_norm = norm_demografica(df_sem_nulls)
+df_norm.to_csv("normalizado/sel3_full.csv", sep=';')
 
 
 # %%
