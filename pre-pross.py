@@ -122,6 +122,9 @@ def retirar_nulls(df):
         'V0723-População em idade ativa',
         'V0800-Idade média ao morrer (em anos)',
         'V0844-Número de alunos da Educação Infantil que moram até 1,5Km da escola'
+
+        ## REPETIDOS / ALTAMENTE CORRELACIONADOS
+
     ]
     return df.drop(columns=ruins).copy()
 
@@ -199,7 +202,8 @@ def norm_demografica(df):
         'Número de casos de notificação de violência contra pessoas idosas': ('População com 60 anos ou mais', 100000, 'Violência contra Idosos (por 100 mil idosos)'),
         
         # Usa "V0017-Número de nascidos vivos" como base:
-        'V0016-Número de óbitos menores de 1 ano de idade': ('V0017-Número de nascidos vivos', 1000, 'Taxa de Mortalidade Infantil (por 1.000 nascidos vivos)'),
+        #'V0016-Número de óbitos menores de 1 ano de idade': ('V0017-Número de nascidos vivos', 1000, 'Taxa de Mortalidade Infantil (por 1.000 nascidos vivos)'),
+        # Já temos a mesma coisa consolidada
 
         # === AS VARIÁVEIS QUE SERVEM DE DENOMINADOR (DELETADAS POR ÚLTIMO) ===
         'População com 60 anos ou mais': ('População total', 100, 'População com 60 Anos ou Mais (%)'),
