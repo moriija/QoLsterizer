@@ -34,7 +34,7 @@ def tratar_disposicao(df):
 # JUNTANDO variaveis + indicadores
 merged = pd.merge(tratar_disposicao(var_i), tratar_disposicao(var_v), on=['Período', 'Distrito'], how='inner')
 
-# %%
+
 def selecionar_cols_relevantes(df):
     # FILTRANDO APENAS VARS RELEVANTES
     # Lista contendo exatamente os nomes das colunas que você deseja selecionar
@@ -105,20 +105,8 @@ df_sel.to_csv("raw/merged_1sel_full.csv", sep=';')
 # analisadas em relacao a nulls e zeros, vamos retirar as piores
 def retirar_nulls(df):
     ruins = [
-        '02.02.05 Proporção de nascidos vivos com peso ao nascer inferior a 2.500 gramas (%)',
-        '03.01.01 Razão de mortalidade materna (por 100 mil nascidos vivos)',
-        '03.02.01 Taxa de mortalidade infantil (por mil nascidos vivos)',
-        '03.07.02 Proporção de gestantes adolescentes (%)',
-        '04.02.01 Demanda Atendida de Vagas em Creches da Rede Municipal de Ensino (%)',
-        '04.0a.01 Porcentagem de escolas com recursos para Atendimento Educacional Especializado (%)',
-        '11.01.03 Número de Unidades Habitacionais entregues (por meio de programas habitacionais e parcerias firmadas)',
-        'Equipamentos públicos municipais de cultura (por 100 mil habitantes)',
         'Escolas Municipais de Ensino Fundamental que oferecem turmas em educação integral em tempo integral (7h/dia ou mais)',
-        'Porcentagem de lâmpadas LED na iluminação pública (%)',
-        'Professores da Rede Municipal com Ensino Superior completo (%)',
-        'Taxa de abandono escolar no Ensino Fundamental da Rede Municipal de Ensino (%)',
-        'Taxa de abandono escolar no Ensino Médio da Rede Municipal de Ensino (%)',
-        'Índice de envelhecimento',
+        #'Porcentagem de lâmpadas LED na iluminação pública (%)',
         'V0091-Soma de alunos aprovados, reprovados e que abandonaram a escola no Ensino Médio na rede municipal',
         'V0005-População - 0 a 3 anos',
         'V0011-População - 4 a 17 anos',
@@ -140,7 +128,6 @@ def retirar_nulls(df):
 df_sem_nulls = retirar_nulls(df_sel)
 df_sem_nulls.to_csv("raw/merged_2sel_full.csv", sep=';')
 
-# %%
 # normalização demografica
 
 def norm_demografica(df):
@@ -193,6 +180,9 @@ def norm_demografica(df):
         ),
         'Quantidade de lâmpadas na iluminação pública ': (
             'População total', 1, 'Lâmpadas de Iluminação Pública por Habitante'
+        ),
+        '11.01.03 Número de Unidades Habitacionais entregues (por meio de programas habitacionais e parcerias firmadas)': (
+            'População total', 100000, 'Unidades Habitacionais entregues (por 100 mil hab.)'
         ),
 
         # === NOVAS VARIÁVEIS ADICIONADAS ===
