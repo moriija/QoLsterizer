@@ -230,3 +230,13 @@ df_norm.to_csv("normalizado/sel3_full.csv", sep=';')
 
 
 # %%
+
+def retirar_pouca_variancia(df):
+
+    ruins = [
+        
+    ]
+    return df.drop(columns=ruins).copy()
+
+df_sel4 = retirar_pouca_variancia(df_norm)
+df_sel4.to_csv("normalizado/sel4_full.csv", sep=';')
