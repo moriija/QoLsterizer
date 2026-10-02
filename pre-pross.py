@@ -71,7 +71,6 @@ def selecionar_cols_relevantes(df):
     'Professores da Rede Municipal com Ensino Superior completo (%)',
     'Quantidade de lâmpadas na iluminação pública ',
     'Taxa de abandono escolar no Ensino Fundamental da Rede Municipal de Ensino (%)',
-    'Taxa de abandono escolar no Ensino Médio da Rede Municipal de Ensino (%)',
     'Índice de envelhecimento',
     'V0005-População - 0 a 3 anos',
     'V0011-População - 4 a 17 anos',
