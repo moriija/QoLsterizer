@@ -52,7 +52,6 @@ def selecionar_cols_relevantes(df):
     '03.07.02 Proporção de gestantes adolescentes (%)',
     '04.02.01 Demanda Atendida de Vagas em Creches da Rede Municipal de Ensino (%)',
     '04.0a.01 Porcentagem de escolas com recursos para Atendimento Educacional Especializado (%)',
-    '11.01.03 Número de Unidades Habitacionais entregues (por meio de programas habitacionais e parcerias firmadas)',
     '11.01.07 Número estimado de domicílios em favelas',
     '11.01.08 Total de famílias beneficiárias de Auxílio Aluguel por ano',
     '11.05.02 Número de ocorrências atendidas – deslizamento',
@@ -61,7 +60,6 @@ def selecionar_cols_relevantes(df):
     'Demanda atendida de vagas em Pré-escolas da Rede Municipal de Ensino (%)',
     'Equipamentos públicos municipais de cultura (por 100 mil habitantes)',
     'Escolas Municipais de Ensino Fundamental que oferecem turmas em educação integral em tempo integral (7h/dia ou mais)',
-    'Número de acidentes de bicicleta',
     'Número de casos de notificação de violência contra pessoas idosas',
     'Número de matrículas em tempo integral nas escolas públicas municipais de Educação Infantil',
     'Número de ocorrências atendidas – alagamento',
@@ -172,9 +170,6 @@ def norm_demografica(df):
         'Número de ocorrências atendidas – queda de árvore': (
             'População total', 100000, 'Ocorrências de Queda de Árvore (por 100 mil hab.)'
         ),
-        'Número de acidentes de bicicleta': (
-            'População total', 100000, 'Acidentes de Bicicleta (por 100 mil hab.)'
-        ),
         '16.02.03 Número de casos notificados de violência contra crianças e adolescentes': (
             'População total', 100000, 'Casos notificados de violência contra crianças e adolescentes (por 100 mil hab.)'
         ),
@@ -183,9 +178,6 @@ def norm_demografica(df):
         ),
         'Quantidade de lâmpadas na iluminação pública ': (
             'População total', 1, 'Lâmpadas de Iluminação Pública por Habitante'
-        ),
-        '11.01.03 Número de Unidades Habitacionais entregues (por meio de programas habitacionais e parcerias firmadas)': (
-            'População total', 100000, 'Unidades Habitacionais entregues (por 100 mil hab.)'
         ),
 
         # === NOVAS VARIÁVEIS ADICIONADAS ===
