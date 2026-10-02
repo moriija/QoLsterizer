@@ -157,18 +157,6 @@ def norm_demografica(df):
         '11.01.08 Total de famílias beneficiárias de Auxílio Aluguel por ano': (
             'População total', 100000, 'Familias beneficiárias de Auxílio Aluguel (por 100 mil hab.)'
         ),
-        '11.05.02 Número de ocorrências atendidas – deslizamento': (
-            'População total', 100000, 'Ocorrências de Deslizamento (por 100 mil hab.)'
-        ),
-        '11.05.03 Número de ocorrências atendidas – inundação': (
-            'População total', 100000, 'Ocorrências de Inundação (por 100 mil hab.)'
-        ),
-        'Número de ocorrências atendidas – alagamento': (
-            'População total', 100000, 'Ocorrências de Alagamento (por 100 mil hab.)'
-        ),
-        'Número de ocorrências atendidas – queda de árvore': (
-            'População total', 100000, 'Ocorrências de Queda de Árvore (por 100 mil hab.)'
-        ),
         '16.02.03 Número de casos notificados de violência contra crianças e adolescentes': (
             'População total', 100000, 'Casos notificados de violência contra crianças e adolescentes (por 100 mil hab.)'
         ),
@@ -234,7 +222,8 @@ df_norm.to_csv("normalizado/sel3_full.csv", sep=';')
 def retirar_pouca_variancia(df):
 
     ruins = [
-        
+        'Demanda atendida de vagas em Pré-escolas da Rede Municipal de Ensino (%)',
+
     ]
     return df.drop(columns=ruins).copy()
 
