@@ -1,43 +1,56 @@
-# ObservaSampa
+# QoLsterizer
 
-Ferramentas para tratar e revisar os dados do ObservaSampa (indicadores por distrito/subprefeitura de São Paulo).
+Pipeline completo para agrupar (clusterizar) os distritos de São Paulo a partir dos indicadores abertos do [ObservaSampa](https://observasampa.prefeitura.sp.gov.br): da revisão manual das variáveis até a busca de hiperparâmetros com Optuna e o registro dos modelos no MLflow.
+
+## Fluxo
+
+```
+data/raw/                         CSVs originais do ObservaSampa (Indicadores + Variáveis)
+   │
+   │  tools/variable_reviewer/    revisão manual: quais variáveis manter  ──►  data/variable_review/
+   ▼
+preprocessing/preprocess.py       formato largo, seleção de variáveis, remoção de nulos, normalização demográfica
+   │                              ──►  data/interim/  (merged_1sel, merged_2sel)
+   │                              ──►  data/processed/ (sel3_full, sel4_full)
+   ▼
+analysis/                         EDA.ipynb (nulos/zeros, correlação, variância) e normalization_tester.py
+   │                              ──►  analysis/figures/
+   ▼
+clustering/                       Optuna (scaler + redutor + clusterer) ─► métricas/estabilidade ─► MLflow
+                                  entrada: data/processed/sel4_full.csv
+```
 
 ## Estrutura
 
 ```
-csv/
-  extracted/    dados brutos extraídos (formato largo, uma coluna por indicador)
-  generated/    dados já processados (formato longo) e planilha de decisões
-variable-reviewer/
-  observa_parser.py    converte os CSVs em um JSON para revisão
-  index.html  interface para revisar as variáveis e decidir quais manter
+QoLsterizer/
+├── data/
+│   ├── raw/                 dados originais, nunca editar
+│   ├── interim/             saídas intermediárias do pré-processamento
+│   ├── processed/           tabelas finais (sel4_full.csv é a entrada da clusterização)
+│   └── variable_review/     extracted/ (entrada do reviewer) e generated/ (decisões exportadas)
+├── tools/variable_reviewer/ interface web + parser para revisar variáveis
+├── preprocessing/           preprocess.py
+├── analysis/                EDA.ipynb, normalization_tester.py, figures/
+├── clustering/              run.py, prepare_data.py, config.yaml, src/
+└── requirements.txt
 ```
 
-## Formatos de CSV aceitos
+## Como rodar
 
-O parser reconhece dois formatos automaticamente:
-
-- **Longo**: `Nome;Região;Período;Resultado`
-- **Largo**: `Período;tipo_regiao;Distrito;<indicador 1>;<indicador 2>;...`, onde cada coluna vira uma variável e células vazias são descartadas.
-
-## Como usar
-
-1. Rode o parser sobre um ou mais CSVs para gerar o JSON:
+Sempre a partir da raiz do repositório:
 
 ```bash
-python3 variable-reviewer/observa_parser.py csv/extracted/dados_filtrados_2013_2024.csv -o dataset.json
+pip install -r requirements.txt
+
+python preprocessing/preprocess.py          # data/raw  ->  data/interim + data/processed
+python analysis/normalization_tester.py     # compara normalizações (PCA clássico vs. robusto)
+
+python clustering/prepare_data.py --year 2023   # opcional: relatório de qualidade dos dados
+python clustering/run.py                        # usa clustering/config.yaml
+mlflow ui --backend-store-uri ./mlruns
 ```
 
-O script imprime um relatório com total de linhas, variáveis, regiões e estatísticas do período coberto.
+O notebook `analysis/EDA.ipynb` encontra a raiz do repositório sozinho, então pode ser aberto de qualquer diretório.
 
-2. Abra `index.html` no navegador e carregue o `dataset.json` (ou os CSVs diretamente).
-
-3. Na interface, revise cada variável e marque "Manter" ou "Não manter". Também é possível aplicar uma regra automática de descarte por cobertura de distritos e percentual de dados nulos.
-
-4. Exporte o resultado:
-   - `variaveis_revisao.csv` — lista das decisões (manter/não manter) por variável
-   - `dados_filtrados.csv` — dados finais já filtrados, apenas com as variáveis mantidas
-
-## Requisitos
-
-Python 3, sem dependências externas (usa apenas a biblioteca padrão).
+Detalhes de cada etapa: [`tools/variable_reviewer/README.md`](tools/variable_reviewer/README.md) e [`clustering/README.md`](clustering/README.md).

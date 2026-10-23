@@ -1,7 +1,15 @@
 # %%
 import pandas as pd
-var_v = pd.read_csv('raw/ObservaSampaDadosAbertosVariaveisCSV.csv', delimiter=';')
-var_i = pd.read_csv('raw/ObservaSampaDadosAbertosIndicadoresCSV.csv', delimiter=';')
+from pathlib import Path
+
+# Repo root, so paths work from any working directory (also when run cell-by-cell).
+try:
+    ROOT = Path(__file__).resolve().parents[1]
+except NameError:
+    ROOT = next(d for d in [Path.cwd(), *Path.cwd().parents] if (d / "data").is_dir())
+RAW, INTERIM, PROCESSED = ROOT / "data/raw", ROOT / "data/interim", ROOT / "data/processed"
+var_v = pd.read_csv(RAW / 'ObservaSampaDadosAbertosVariaveisCSV.csv', delimiter=';')
+var_i = pd.read_csv(RAW / 'ObservaSampaDadosAbertosIndicadoresCSV.csv', delimiter=';')
 
 def tratar_disposicao(df):
     # Apenas as vars disponiveis por distrito
@@ -97,7 +105,7 @@ def selecionar_cols_relevantes(df):
 
 # Criando um novo DataFrame contendo apenas as colunas especificadas
 df_sel = selecionar_cols_relevantes(merged)
-df_sel.to_csv("raw/merged_1sel_full.csv", sep=';')
+df_sel.to_csv(INTERIM / "merged_1sel_full.csv", sep=';')
 
 # analisadas em relacao a nulls e zeros, vamos retirar as piores
 def retirar_nulls(df):
@@ -126,7 +134,7 @@ def retirar_nulls(df):
     return df.drop(columns=ruins).copy()
 
 df_sem_nulls = retirar_nulls(df_sel)
-df_sem_nulls.to_csv("raw/merged_2sel_full.csv", sep=';')
+df_sem_nulls.to_csv(INTERIM / "merged_2sel_full.csv", sep=';')
 
 # normalização demografica
 
@@ -214,7 +222,7 @@ def norm_demografica(df):
     return df_normalizado
 
 df_norm = norm_demografica(df_sem_nulls)
-df_norm.to_csv("normalizado/sel3_full.csv", sep=';')
+df_norm.to_csv(PROCESSED / "sel3_full.csv", sep=';')
 
 
 # %%
@@ -228,4 +236,4 @@ def retirar_pouca_variancia(df):
     return df.drop(columns=ruins).copy()
 
 df_sel4 = retirar_pouca_variancia(df_norm)
-df_sel4.to_csv("normalizado/sel4_full.csv", sep=';')
+df_sel4.to_csv(PROCESSED / "sel4_full.csv", sep=';')

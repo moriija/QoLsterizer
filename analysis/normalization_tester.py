@@ -1,7 +1,9 @@
 import numpy as np, pandas as pd
+from pathlib import Path
 from scipy.stats import median_abs_deviation as mad, iqr
 
-PATH = "./normalizado/sel4_full.csv"
+ROOT = Path(__file__).resolve().parents[1]
+PATH = ROOT / "data/processed/sel4_full.csv"
 MAX_MISSING = 0.65      # keep variables with <= this fraction of NaN
 N_PERM = 100
 
